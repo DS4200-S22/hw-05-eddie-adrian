@@ -16,12 +16,29 @@ let myCircles1;
 
 //TODO: append svg object to the body of the page to house Scatterplot2 (call it svg2)
 
+const svg2 = d3.select("#vis-holder")
+                .append("svg")
+                .attr("width", width - margin.left - margin.right)
+                .attr("height", height - margin.top - margin.bottom)
+                .attr("viewBox", [0, 0, width, height]); 
+
+
 //TODO: Initialize brush for Scatterplot2 and points. We will need these to be global.
+
+let brush2;
+let myCircle2;
 
 //TODO: append svg object to the body of the page to house bar chart 
 
+const svg3 = d3.select("#vis-holder")
+                .append("svg")
+                .attr("width", width - margin.left - margin.right)
+                .attr("height", height - margin.top - margin.bottom)
+                .attr("viewBox", [0, 0, width, height]); 
+
 //TODO: Initialize bars. We will need these to be global. 
 
+let bars;
 
 // Define color scale
 const color = d3.scaleOrdinal()
@@ -98,18 +115,161 @@ d3.csv("data/iris.csv").then((data) => {
 
     //TODO: Define a brush (call it brush1)
 
+    svg1
+    .call( d3.brush()                 // Add the brush feature using the d3.brush function
+      .extent( [ [margin.left, margin.top], [width-margin.right, height-margin.bottom] ] ) // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
+      .on("start brush", updateChart) // Each time the brush selection changes, trigger the 'updateChart' function
+    )
+
+  // Function that is triggered when brushing is performed
+  function updateChart() {
+    extent = d3.event.selection
+    //myCircles1.classed("selected", function(d){ return isBrushed(extent, x(d[xKey1]), y(d[yKey1]) ) } )
+    //myCircles1.classed("selected", True )
+    //document.getElementById("vis-holder").classList.add("selected")
+  //   if (isBrushed(extent, x(d[xKey1]), y(d[yKey1]))) {
+  //     document.getElementById("vis-holder").setAttribute("class", "selected");
+  //   }
+  }
+
+  // A function that return TRUE or FALSE according if a dot is in the selection or not
+  // function isBrushed(brush_coords, cx, cy) {
+  //      var x0 = brush_coords[0][0],
+  //          x1 = brush_coords[1][0],
+  //          y0 = brush_coords[0][1],
+  //          y1 = brush_coords[1][1];
+  //     return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;    // This return TRUE or FALSE depending on if the points is in the selected area
+  // }
+
     //TODO: Add brush1 to svg1
+
+
     
   }
 
-  //TODO: Scatterplot 2 (show Sepal width on x-axis and Petal width on y-axis)
+  // TODO: Scatterplot 2 (show Sepal width on x-axis and Petal width on y-axis)
   {
-    // Scatterplot2 code here 
+    let xKey2 = "Sepal_Width";
+    let yKey2 = "Petal_Width";
+
+    // Find max x
+    let maxX2 = d3.max(data, (d) => { return d[xKey2]; });
+
+    // Create X scale
+    let x2 = d3.scaleLinear()
+                .domain([0,maxX2])
+                .range([margin.left, width-margin.right]); 
+    
+    // Add x axis 
+    svg2.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`) 
+        .call(d3.axisBottom(x2))   
+        .attr("font-size", '20px')
+        .call((g) => g.append("text")
+                      .attr("x", width - margin.right)
+                      .attr("y", margin.bottom - 4)
+                      .attr("fill", "black")
+                      .attr("text-anchor", "end")
+                      .text(xKey2)
+      );
+
+    // Finx max y 
+    let maxY2 = d3.max(data, (d) => { return d[yKey2]; });
+
+    // Create Y scale
+    let y2 = d3.scaleLinear()
+                .domain([0, maxY2])
+                .range([height - margin.bottom, margin.top]); 
+
+    // Add y axis 
+    svg2.append("g")
+        .attr("transform", `translate(${margin.left}, 0)`) 
+        .call(d3.axisLeft(y2)) 
+        .attr("font-size", '20px') 
+        .call((g) => g.append("text")
+                      .attr("x", 0)
+                      .attr("y", margin.top)
+                      .attr("fill", "black")
+                      .attr("text-anchor", "end")
+                      .text(yKey2)
+      );
+
+    // Add points
+    const myCircles2 = svg2.selectAll("circle")
+                            .data(data)
+                            .enter()
+                              .append("circle")
+                              .attr("id", (d) => d.id)
+                              .attr("cx", (d) => x2(d[xKey2]))
+                              .attr("cy", (d) => y2(d[yKey2]))
+                              .attr("r", 8)
+                              .style("fill", (d) => color(d.Species))
+                              .style("opacity", 0.5);
+
+    //TODO: Define a brush (call it brush2)
+
+    //TODO: Add brush2 to svg2
+    
   }
 
   //TODO: Barchart with counts of different species
   {
-    // Bar chart code here 
+
+    let xKey3 = "Species"
+    let yKey3 = "Counts"
+
+    console.log(typeof(data));
+
+    counts = {}
+    data.forEach(row => {
+      counts[row[xKey3]] = counts[row[xKey3]] ? counts[row[xKey3]] + 1: 1
+    });
+    
+    console.log(typeof(counts));
+    console.log(counts);
+      
+    maxY3 = 0
+    for (let key in counts){
+      if (counts[key] > maxY3) maxY3 = counts[key];
+    }
+    console.log(maxY3)
+
+    console.log(d3.count(data, d => d.Species));
+
+
+    let yScale3 = d3.scaleLinear()  // linear scale for linear data on the y axis
+        .domain([0,maxY3])  // sets the range of the data from 0 to the max
+        .range([height-margin.bottom,margin.top]);
+
+    let xScale3 = d3.scaleBand()  // scale for the different "categories"
+        .domain(data.map(d => d.Species))  // sets the number of parts on the x axis to the number of data points
+        .range([margin.left, width - margin.right])
+        .padding(0.1); // sets a spacing between each item on the axis
+
+    svg3.append("g")  // place holder svg
+        .attr("transform", `translate(${margin.left}, 0)`) // moves the scale to the left side of the svg
+        .call(d3.axisLeft(yScale3)) // builtin in function for left axis scale
+        .attr("font-size", '20px'); // sets the font size
+
+  // X Axis
+    svg3.append("g") // place holder svg
+        .attr("transform", `translate(0,${height - margin.bottom})`)  // moves the scale to the bottom of the svg
+        .call(d3.axisBottom(xScale3))  // built in function to make the bottom axis
+            .attr("font-size", '20px');  // font size
+
+    svg3.selectAll(".bar")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", (d) => xScale3(d.Species))
+        .attr("y", yScale3(d3.count(data, d => d.Species)))
+        .attr("height", (d) => yScale3(d3.count(data, d => d.Species)))
+        .attr("width", xScale3.bandwidth())
+        .style("fill", (d) => color(d.Species))
+
+
+
   }
 
   //Brushing Code---------------------------------------------------------------------------------------------
