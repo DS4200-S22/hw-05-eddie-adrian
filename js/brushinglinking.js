@@ -224,9 +224,17 @@ d3.csv("data/iris.csv").then((data) => {
     data.forEach(row => {
       counts[row[xKey3]] = counts[row[xKey3]] ? counts[row[xKey3]] + 1: 1
     });
-    
-    console.log(typeof(counts));
-    console.log(counts);
+    console.log("Before map counts")
+    console.log(counts)
+
+    listCounts = []
+    for (let key in counts) {
+      listCounts.push({"species":key, "count":counts[key]});
+    }
+
+    //console.log(typeof(counts));
+    console.log("After map counts")
+    console.log(listCounts);
       
     maxY3 = 0
     for (let key in counts){
@@ -242,7 +250,7 @@ d3.csv("data/iris.csv").then((data) => {
         .range([height-margin.bottom,margin.top]);
 
     let xScale3 = d3.scaleBand()  // scale for the different "categories"
-        .domain(data.map(d => d.Species))  // sets the number of parts on the x axis to the number of data points
+        .domain(d3.range(listCounts.length))  // sets the number of parts on the x axis to the number of data points
         .range([margin.left, width - margin.right])
         .padding(0.1); // sets a spacing between each item on the axis
 
@@ -254,19 +262,20 @@ d3.csv("data/iris.csv").then((data) => {
   // X Axis
     svg3.append("g") // place holder svg
         .attr("transform", `translate(0,${height - margin.bottom})`)  // moves the scale to the bottom of the svg
-        .call(d3.axisBottom(xScale3))  // built in function to make the bottom axis
-            .attr("font-size", '20px');  // font size
+        .call(d3.axisBottom(xScale3)  // built in function to make the bottom axis
+            .tickFormat(i => listCounts[i].species))    
+        .attr("font-size", '20px');  // font size
 
     svg3.selectAll(".bar")
-        .data(data)
+        .data(listCounts)
         .enter()
         .append("rect")
         .attr("class", "bar")
-        .attr("x", (d) => xScale3(d.Species))
-        .attr("y", yScale3(d3.count(data, d => d.Species)))
-        .attr("height", (d) => yScale3(d3.count(data, d => d.Species)))
+        .attr("x", (d, i) => xScale3(i))
+        .attr("y", (d) => yScale3(d.count))
+        .attr("height", (d) => (height - margin.bottom)-yScale3(d.count))
         .attr("width", xScale3.bandwidth())
-        .style("fill", (d) => color(d.Species))
+        .style("fill", (d) => color(d.species))
 
 
 
